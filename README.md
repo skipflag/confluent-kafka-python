@@ -46,6 +46,29 @@ while running:
 c.close()
 ```
 
+**AvroConsumer**
+```
+from confluent_kafka import Producer
+from confluent_kafka.avro.AvroProducer import AvroProducer
+from confluent_kafka.avro.CachedSchemaRegistryClient import CachedSchemaRegistryClient
+from confluent_kafka.avro.serializer import Util
+from confluent_kafka.avro.serializer.MessageSerializer import MessageSerializer
+
+value_avro_schema = Util.parse_schema_from_file('ValueSchema.avsc')
+key_avro_schema = Util.parse_schema_from_file('KeySchema.avsc')
+value = {"name": "Value"}
+key = {"name": "Key"}
+
+producer = Producer({'bootstrap.servers': 'mybroker,mybroker2'})
+
+schemaRegistryUrl = 'https://<host>:<port>'
+schemaRegistryClient = CachedSchemaRegistryClient(url=schemaRegistryUrl)
+serializer = MessageSerializer(schemaRegistryClient)
+
+avroProducer = AvroProducer(producer, serializer)
+avroProducer.produce('my_topic', value, value_avro_schema=value_avro_schema, key=key, key_avro_schema=key_avro_schema)
+```
+
 See [examples](examples) for more examples.
 
 
@@ -85,6 +108,9 @@ Install
 **Install from PyPi:**
 
     $ pip install confluent-kafka
+    
+    #for Avroproducer
+    $ pip install confluent-kafka[avro]
 
 
 **Install from source / tarball:**
