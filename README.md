@@ -46,7 +46,7 @@ while running:
 c.close()
 ```
 
-**AvroConsumer**
+**AvroProducer**
 ```
 from confluent_kafka import Producer
 from confluent_kafka.avro.AvroProducer import AvroProducer
