@@ -19,7 +19,7 @@ import logging
 
 from confluent_kafka.avro.serializer import SerializerError
 
-
+log = logging.getLogger(__name__)
 class AvroProducer(object):
     '''
         Kafka Producer client which does avro schema encoding to messages.
@@ -33,7 +33,6 @@ class AvroProducer(object):
     def __init__(self, producer, message_serializer):  # real signature unknown; restored from __doc__
         self.producer = producer
         self.serializer = message_serializer
-        self.log = logging.getLogger(__name__)
 
     def produce(self, topic, value=None, value_avro_schema=None, key=None, key_avro_schema=None, *args, **kwargs):
         '''
@@ -49,14 +48,14 @@ class AvroProducer(object):
             if value_avro_schema is not None:
                 value = self.serializer.encode_record_with_schema(topic, value_avro_schema, value)
             else:
-                self.log.error("Schema required for value serialization")
+                log.error("Schema required for value serialization")
                 raise SerializerError("Avro schema required for value")
 
         if key is not None:
             if key_avro_schema is not None:
                 key = self.serializer.encode_record_with_schema(topic, key_avro_schema, key, True)
             else:
-                self.log.error("Schema required for key serialization")
+                log.error("Schema required for key serialization")
                 raise SerializerError("Avro schema required for key")
 
-        self.producer.produce(topic, value, key)
+        self.producer.produce(topic, value, key, args, kwargs)

@@ -112,7 +112,6 @@ class MockServer(HTTPSERVER.HTTPServer, object):
     def _get_schema_from_body(self, req):
         length = int(req.headers['content-length'])
         data = req.rfile.read(length)
-        print(data.decode("utf-8"))
         data = json.loads(data.decode("utf-8"))
         schema = data.get("schema", None)
         if not schema:

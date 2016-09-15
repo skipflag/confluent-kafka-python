@@ -30,7 +30,7 @@ from . import ClientError, VALID_LEVELS
 
 # Common accept header sent
 ACCEPT_HDR = "application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json"
-
+log = logging.getLogger(__name__)
 
 class CachedSchemaRegistryClient(object):
     """
@@ -45,7 +45,7 @@ class CachedSchemaRegistryClient(object):
 
     def __init__(self, url, max_schemas_per_subject=1000):
         """Construct a client by passing in the base URL of the schema registry server"""
-        self.log = logging.getLogger(__name__)
+
         self.url = url.rstrip('/')
 
         self.max_schemas_per_subject = max_schemas_per_subject
@@ -64,7 +64,6 @@ class CachedSchemaRegistryClient(object):
         if body:
             body = json.dumps(body)
             body = body.encode('utf8')
-            print(body)
         _headers = dict()
         _headers["Accept"] = ACCEPT_HDR
         if body:
@@ -107,6 +106,7 @@ class CachedSchemaRegistryClient(object):
 
     def register(self, subject, avro_schema):
         """
+        POST /subjects/(string: subject)/versions
         Register a schema with the registry under the given subject
         and receive a schema id.
 
@@ -130,8 +130,14 @@ class CachedSchemaRegistryClient(object):
 
         body = {'schema': json.dumps(avro_schema.to_json())}
         result, code = self._send_request(url, method='POST', body=body)
-        if (code != 200):
-            self.log.error("Unable to register schema. Error code:" + str(code))
+        if(code==409):
+            log.error("Incompatible Avro schema:" + str(code))
+            raise ClientError("Incompatible Avro schema:" + str(code))
+        elif(code==422):
+            log.error("Invalid Avro schema:" + str(code))
+            raise ClientError("Invalid Avro schema:" + str(code))
+        elif (code != 200):
+            log.error("Unable to register schema. Error code:" + str(code))
             raise ClientError("Unable to register schema. Error code:" + str(code))
         # result is a dict
         schema_id = result['id']
@@ -140,7 +146,9 @@ class CachedSchemaRegistryClient(object):
         return schema_id
 
     def get_by_id(self, schema_id):
-        """Retrieve a parsed avro schema by id or None if not found
+        """
+        GET /schemas/ids/{int: id}
+        Retrieve a parsed avro schema by id or None if not found
         @:param: schema_id: int value
         @:returns: Avro schema
         """
@@ -150,7 +158,11 @@ class CachedSchemaRegistryClient(object):
         url = '/'.join([self.url, 'schemas', 'ids', str(schema_id)])
 
         result, code = self._send_request(url)
-        if (code != 200):
+        if(code==404):
+            log.error("Schema not found:"+str(code))
+            return None
+        elif (code != 200):
+            log.error("Unable to get schema for the specific ID:" + str(code))
             return None
         else:
             # need to parse the schema
@@ -162,11 +174,13 @@ class CachedSchemaRegistryClient(object):
                 return result
             except:
                 # bad schema - should not happen
-                self.log.error("Received bad schema from registry.")
+                log.error("Received bad schema from registry.")
                 raise ClientError("Received bad schema from registry.")
 
     def get_latest_schema(self, subject):
         """
+        GET /subjects/(string: subject)/versions/(versionId: version)
+
         Return the latest 3-tuple of:
         (the schema id, the parsed avro schema, the schema version)
         for a particular subject.
@@ -180,7 +194,13 @@ class CachedSchemaRegistryClient(object):
         url = '/'.join([self.url, 'subjects', subject, 'versions', 'latest'])
 
         result, code = self._send_request(url)
-        if (code != 200):
+        if ( code == 404):
+            log.error("Schema not found:"+str(code))
+            return (None, None, None)
+        elif( code == 422 ):
+            log.error("Invalid version:" + str(code))
+            return (None, None, None)
+        elif (code != 200):
             return (None, None, None)
         schema_id = result['id']
         version = result['version']
@@ -191,7 +211,7 @@ class CachedSchemaRegistryClient(object):
                 schema = Util.parse_schema_from_string(result['schema'])
             except:
                 # bad schema - should not happen
-                self.log.error("Received bad schema from registry.")
+                log.error("Received bad schema from registry.")
                 raise ClientError("Received bad schema from registry.")
 
         self._cache_schema(schema, schema_id, subject, version)
@@ -199,6 +219,8 @@ class CachedSchemaRegistryClient(object):
 
     def get_version(self, subject, avro_schema):
         """
+        POST /subjects/(string: subject)
+
         Get the version of a schema for a given subject.
 
         Returns None if not found.
@@ -215,7 +237,11 @@ class CachedSchemaRegistryClient(object):
         body = {'schema': json.dumps(avro_schema.to_json())}
 
         result, code = self._send_request(url, method='POST', body=body)
-        if (code != 200):
+        if (code == 404):
+            log.error("Not found:"+str(code))
+            return None
+        elif (code != 200):
+            log.error("Unable to get version of a schema:" + str(code))
             return None
         schema_id = result['id']
         version = result['version']
@@ -224,6 +250,8 @@ class CachedSchemaRegistryClient(object):
 
     def test_compatibility(self, subject, avro_schema, version='latest'):
         """
+        POST /compatibility/subjects/(string: subject)/versions/(versionId: version)
+
         Test the compatibility of a candidate parsed schema for a given subject.
 
         By default the latest version is checked against.
@@ -236,15 +264,24 @@ class CachedSchemaRegistryClient(object):
         avro_schema = body = {'schema': json.dumps(avro_schema.to_json())}
         try:
             result, code = self._send_request(url, method='POST', body=body)
-            if (code == 200):
+            if (code == 404):
+                log.error(("Subject or version not found:"+str(code)))
+                return False
+            elif (code == 422):
+                log.error(("Invalid subject or schema:" + str(code)))
+                return False
+            elif (code == 200):
                 return result.get('is_compatible')
             else:
+                log.error("Unable to check the compatibility")
                 False
         except:
             return False
 
     def update_compatibility(self, level, subject=None):
         """
+        PUT /config/(string: subject)
+
         Update the compatibility level for a subject.  Level must be one of:
 
         @:param: level: ex: 'NONE','FULL','FORWARD', or 'BACKWARD'
@@ -261,11 +298,12 @@ class CachedSchemaRegistryClient(object):
         if (code == 200):
             return result['compatibility']
         else:
-            self.log.error("Unable to update level: %s. Error code: %d" % (str(level)), code)
+            log.error("Unable to update level: %s. Error code: %d" % (str(level)), code)
             raise ClientError("Unable to update level: %s. Error code: %d" % (str(level)), code)
 
     def get_compatibility(self, subject=None):
         """
+        GET /config
         Get the current compatibility level for a subject.  Result will be one of:
 
         @:param: subject: subject name

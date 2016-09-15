@@ -29,6 +29,7 @@ import avro.io
 
 from confluent_kafka.avro import ClientError
 from . import SerializerError
+log = logging.getLogger(__name__)
 
 MAGIC_BYTE = 0
 
@@ -66,7 +67,6 @@ class MessageSerializer(object):
         self.registry_client = registry_client
         self.id_to_decoder_func = {}
         self.id_to_writers = {}
-        self.log = logging.getLogger(__name__)
 
     '''
 
@@ -84,7 +84,7 @@ class MessageSerializer(object):
         @:returns : Encoded record with schema ID as bytes
         """
         if not isinstance(record, dict):
-            self.log.error("record must be a dictionary")
+            log.error("record must be a dictionary")
             raise SerializerError("record must be a dictionary")
         subject_suffix = ('-key' if is_key else '-value')
         # get the latest schema for the subject
@@ -93,7 +93,7 @@ class MessageSerializer(object):
         schema_id = self.registry_client.register(subject, schema)
         if not schema_id:
             message = "Unable to retrieve schema id for subject %s" % (subject)
-            self.log.error(message)
+            log.error(message)
             raise SerializerError(message)
 
         # cache writer
@@ -113,7 +113,7 @@ class MessageSerializer(object):
         @:returns : Encoded record with schema ID as bytes
         """
         if not isinstance(record, dict):
-            self.log.error("record must be a dictionary")
+            log.error("record must be a dictionary")
             raise SerializerError("record must be a dictionary")
         subject_suffix = ('-key' if is_key else '-value')
         # get the latest schema for the subject
@@ -122,7 +122,7 @@ class MessageSerializer(object):
             schema_id, schema, version = self.registry_client.get_latest_schema(subject)
         except ClientError as e:
             message = "Unable to retrieve schema id for subject %s" % (subject)
-            self.log.error(message)
+            log.error(message)
             raise SerializerError(message)
         else:
             # cache writer
@@ -138,7 +138,7 @@ class MessageSerializer(object):
         @:returns: decoder function
         """
         if not isinstance(record, dict):
-            self.log.error("record must be a dictionary")
+            log.error("record must be a dictionary")
             raise SerializerError("record must be a dictionary")
         # use slow avro
         if schema_id not in self.id_to_writers:
@@ -147,13 +147,12 @@ class MessageSerializer(object):
             try:
                 schema = self.registry_client.get_by_id(schema_id)
                 if not schema:
-                    self.log.error("Schema does not exist")
+                    log.error("Schema does not exist")
                     raise SerializerError("Schema does not exist")
                 self.id_to_writers[schema_id] = avro.io.DatumWriter(schema)
             except ClientError as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-                self.log.error("Error fetching schema from registry")
+                log.error("Error fetching schema from registry")
                 raise SerializerError("Error fetching schema from registry")
 
         # get the writer
@@ -190,7 +189,7 @@ class MessageSerializer(object):
 
         if not schema:
             err = "unable to fetch schema with id %d" % (schema_id)
-            self.log.error(err)
+            log.error(err)
             raise SerializerError(err)
 
         curr_pos = payload.tell()
@@ -229,13 +228,13 @@ class MessageSerializer(object):
         @:param: message
         """
         if len(message) <= 5:
-            self.log.error("message is too small to decode")
+            log.error("message is too small to decode")
             raise SerializerError("message is too small to decode")
 
         with ContextStingIO(message) as payload:
             magic, schema_id = struct.unpack('>bI', payload.read(5))
             if magic != MAGIC_BYTE:
-                self.log.error("message does not start with magic byte")
+                log.error("message does not start with magic byte")
                 raise SerializerError("message does not start with magic byte")
             decoder_func = self._get_decoder_func(schema_id, payload)
             return decoder_func(payload)
