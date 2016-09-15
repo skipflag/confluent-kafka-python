@@ -42,7 +42,7 @@ except:
     pass
 
 
-class ContextStingIO(io.BytesIO):
+class ContextStringIO(io.BytesIO):
     """
     Wrapper to allow use of StringIO via 'with' constructs.
     """
@@ -157,7 +157,7 @@ class MessageSerializer(object):
 
         # get the writer
         writer = self.id_to_writers[schema_id]
-        with ContextStingIO() as outf:
+        with ContextStringIO() as outf:
             # write the header
             # magic byte
 
@@ -231,7 +231,7 @@ class MessageSerializer(object):
             log.error("message is too small to decode")
             raise SerializerError("message is too small to decode")
 
-        with ContextStingIO(message) as payload:
+        with ContextStringIO(message) as payload:
             magic, schema_id = struct.unpack('>bI', payload.read(5))
             if magic != MAGIC_BYTE:
                 log.error("message does not start with magic byte")
