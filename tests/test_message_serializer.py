@@ -29,9 +29,9 @@ else:
     from tests import data_gen
     import unittest2 as unittest
 from avro import schema
-from confluent_kafka.avro.serializer.MessageSerializer import MessageSerializer
-from tests.MockSchemaRegistryClient import MockSchemaRegistryClient
-from confluent_kafka.avro.serializer import Util
+from confluent_kafka.avro.serializer.message_serializer import MessageSerializer
+from tests.mock_schema_registry_client import MockSchemaRegistryClient
+from confluent_kafka.avro.serializer import util
 
 
 class TestMessageSerializer(unittest.TestCase):
@@ -54,8 +54,8 @@ class TestMessageSerializer(unittest.TestCase):
         self.assertEqual(decoded, expected)
 
     def test_encode_with_schema_id(self):
-        adv = Util.parse_schema_from_string(data_gen.ADVANCED_SCHEMA)
-        basic = Util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
+        adv = util.parse_schema_from_string(data_gen.ADVANCED_SCHEMA)
+        basic = util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
         subject = 'test'
         schema_id = self.client.register(subject, basic)
 
@@ -74,7 +74,7 @@ class TestMessageSerializer(unittest.TestCase):
 
     def test_encode_record_for_topic(self):
         topic = 'test'
-        basic = Util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
+        basic = util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
         subject = 'test-value'
         schema_id = self.client.register(subject, basic)
 
@@ -85,7 +85,7 @@ class TestMessageSerializer(unittest.TestCase):
 
     def test_encode_record_with_schema(self):
         topic = 'test'
-        basic = Util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
+        basic = util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
         subject = 'test-value'
         schema_id = self.client.register(subject, basic)
         records = data_gen.BASIC_ITEMS

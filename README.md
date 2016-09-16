@@ -49,24 +49,24 @@ c.close()
 **AvroProducer**
 ```
 from confluent_kafka import Producer
-from confluent_kafka.avro.AvroProducer import AvroProducer
-from confluent_kafka.avro.CachedSchemaRegistryClient import CachedSchemaRegistryClient
-from confluent_kafka.avro.serializer import Util
-from confluent_kafka.avro.serializer.MessageSerializer import MessageSerializer
+from confluent_kafka.avro.avro_producer import AvroProducer
+from confluent_kafka.avro.cached_schema_registry_client import CachedSchemaRegistryClient
+from confluent_kafka.avro.serializer import util
+from confluent_kafka.avro.serializer.message_serializer import MessageSerializer
 
-value_avro_schema = Util.parse_schema_from_file('ValueSchema.avsc')
-key_avro_schema = Util.parse_schema_from_file('KeySchema.avsc')
+value_avro_schema = util.parse_schema_from_file('ValueSchema.avsc')
+key_avro_schema = util.parse_schema_from_file('KeySchema.avsc')
 value = {"name": "Value"}
 key = {"name": "Key"}
 
 producer = Producer({'bootstrap.servers': 'mybroker,mybroker2'})
 
-schemaRegistryUrl = 'https://<host>:<port>'
-schemaRegistryClient = CachedSchemaRegistryClient(url=schemaRegistryUrl)
-serializer = MessageSerializer(schemaRegistryClient)
+schema_registry_url = 'https://<host>:<port>'
+schema_registr_client = CachedSchemaRegistryClient(url=schema_registry_url)
+serializer = MessageSerializer(schema_registr_client)
 
 avroProducer = AvroProducer(producer, serializer)
-avroProducer.produce('my_topic', value, value_avro_schema=value_avro_schema, key=key, key_avro_schema=key_avro_schema)
+avroProducer.produce('my_topic', value, value_schema=value_avro_schema, key=key, key_schema=key_avro_schema)
 ```
 
 See [examples](examples) for more examples.

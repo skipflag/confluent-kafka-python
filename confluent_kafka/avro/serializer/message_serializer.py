@@ -152,8 +152,9 @@ class MessageSerializer(object):
                 self.id_to_writers[schema_id] = avro.io.DatumWriter(schema)
             except ClientError as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                log.error("Error fetching schema from registry")
-                raise SerializerError("Error fetching schema from registry")
+                log.error("Error fetching schema from registry:"+repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                raise SerializerError("Error fetching schema from registry:"+repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+
 
         # get the writer
         writer = self.id_to_writers[schema_id]

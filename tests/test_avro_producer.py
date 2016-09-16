@@ -22,16 +22,16 @@
 
 import sys
 
-from confluent_kafka.avro.serializer import Util
+from confluent_kafka.avro.serializer import util
 
 if sys.version_info[0] < 3:
     import unittest
 else:
     import unittest2 as unittest
-from confluent_kafka.avro.AvroProducer import AvroProducer
+from confluent_kafka.avro.avro_producer import AvroProducer
 
-from confluent_kafka.avro.CachedSchemaRegistryClient import CachedSchemaRegistryClient
-from confluent_kafka.avro.serializer.MessageSerializer import MessageSerializer
+from confluent_kafka.avro.cached_schema_registry_client import CachedSchemaRegistryClient
+from confluent_kafka.avro.serializer.message_serializer import MessageSerializer
 
 
 class TestAvroProducer(unittest.TestCase):
@@ -46,7 +46,7 @@ class TestAvroProducer(unittest.TestCase):
 
     def test_Produce(self):
         producer = AvroProducer(None, self.ms)
-        valueSchema = Util.parse_schema_from_file("basic_schema.avsc")
+        valueSchema = util.parse_schema_from_file("basic_schema.avsc")
         try:
             producer.produce('test', {"name": 'abc"'}, valueSchema, 'mykey')
             self.fail("Should expect value_schema")

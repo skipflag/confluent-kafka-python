@@ -30,16 +30,16 @@ else:
     import unittest2 as unittest
 from avro import schema
 
-from confluent_kafka.avro.serializer import Util
+from confluent_kafka.avro.serializer import util
 
 
 class TestUtil(unittest.TestCase):
     def test_schema_from_string(self):
-        parsed = Util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
+        parsed = util.parse_schema_from_string(data_gen.BASIC_SCHEMA)
         self.assertTrue(isinstance(parsed, schema.Schema))
 
     def test_schema_from_file(self):
-        parsed = Util.parse_schema_from_file(data_gen.get_schema_path('adv_schema.avsc'))
+        parsed = util.parse_schema_from_file(data_gen.get_schema_path('adv_schema.avsc'))
         self.assertTrue(isinstance(parsed, schema.Schema))
 
 

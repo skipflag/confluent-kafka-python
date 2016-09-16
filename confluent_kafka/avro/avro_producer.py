@@ -31,31 +31,36 @@ class AvroProducer(object):
         @:param: message_serializer: Message Serializer object
     '''
     def __init__(self, producer, message_serializer):  # real signature unknown; restored from __doc__
-        self.producer = producer
-        self.serializer = message_serializer
+        self._producer = producer
+        self._serializer = message_serializer
 
-    def produce(self, topic, value=None, value_avro_schema=None, key=None, key_avro_schema=None, *args, **kwargs):
+    def produce(self, topic, value=None, value_schema=None, key=None, key_schema=None, *args, **kwargs):
         '''
             Sends message to kafka by encoding with specified avro schema
             @:param: topic: topic name
             @:param: value: A dictionary object
-            @:param: value_avro_schema : Avro schema for value
+            @:param: value_schema : Avro schema for value
             @:param: key: A dictionary object
-            @:param: key_avro_schema : Avro schema for key
+            @:param: key_schema : Avro schema for key
             @:exception: SerializerError
         '''
         if value is not None:
-            if value_avro_schema is not None:
-                value = self.serializer.encode_record_with_schema(topic, value_avro_schema, value)
+            if value_schema is not None:
+                value = self._serializer.encode_record_with_schema(topic, value_schema, value)
             else:
                 log.error("Schema required for value serialization")
                 raise SerializerError("Avro schema required for value")
 
         if key is not None:
-            if key_avro_schema is not None:
-                key = self.serializer.encode_record_with_schema(topic, key_avro_schema, key, True)
+            if key_schema is not None:
+                key = self._serializer.encode_record_with_schema(topic, key_schema, key, True)
             else:
                 log.error("Schema required for key serialization")
                 raise SerializerError("Avro schema required for key")
 
-        self.producer.produce(topic, value, key, args, kwargs)
+        self._producer.produce(topic, value, key, *args, **kwargs)
+    def poll(self, timeout):
+        self._producer.poll(timeout)
+
+    def flush(self, *args, **kwargs):
+        self._producer.flush(*args, **kwargs)

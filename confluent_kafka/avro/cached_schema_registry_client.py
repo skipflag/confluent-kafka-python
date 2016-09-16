@@ -21,13 +21,19 @@
 #
 import json
 import logging
+from collections import defaultdict
 
 import requests
 from avro import schema
 
-from confluent_kafka.avro.serializer import Util
+from confluent_kafka.avro.serializer import util
 from . import ClientError, VALID_LEVELS
 
+# below classes were not hashable. hence defining them explicitely as a quick fix
+def hash_func(self):
+    return hash(str(self))
+schema.RecordSchema.__hash__ = hash_func
+schema.PrimitiveSchema.__hash__ = hash_func
 # Common accept header sent
 ACCEPT_HDR = "application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json"
 log = logging.getLogger(__name__)
@@ -50,15 +56,13 @@ class CachedSchemaRegistryClient(object):
 
         self.max_schemas_per_subject = max_schemas_per_subject
         # subj => { schema => id }
-        self.subject_to_schema_ids = {}
+        self.subject_to_schema_ids = defaultdict(dict)
         # id => avro_schema
-        self.id_to_schema = {}
+        self.id_to_schema = defaultdict(dict)
         # subj => { schema => version }
-        self.subject_to_schema_versions = {}
+        self.subject_to_schema_versions = defaultdict(dict)
 
-        # below classes were not hashable. hence defining them explicitely as a quick fix
-        schema.RecordSchema.__hash__ = self.hash_func
-        schema.PrimitiveSchema.__hash__ = self.hash_func
+
 
     def _send_request(self, url, method='GET', body=None, headers=None):
         if body:
@@ -68,7 +72,7 @@ class CachedSchemaRegistryClient(object):
         _headers["Accept"] = ACCEPT_HDR
         if body:
             _headers["Content-Length"] = str(len(body))
-            _headers["Content-Type"] = "application/json"
+            _headers["Content-Type"] = "application/vnd.schemaregistry.v1+json"
 
         if headers:
             for header_name in headers:
@@ -85,8 +89,6 @@ class CachedSchemaRegistryClient(object):
         return (result, response.status_code)
 
     def _add_to_cache(self, cache, subject, schema, value):
-        if subject not in cache:
-            cache[subject] = {}
         sub_cache = cache[subject]
         sub_cache[schema] = value
 
@@ -119,8 +121,7 @@ class CachedSchemaRegistryClient(object):
         @:returns: schema_id: int value
         """
 
-        schemas_to_id = self.subject_to_schema_ids.get(subject, {})
-
+        schemas_to_id = self.subject_to_schema_ids[subject]
         schema_id = schemas_to_id.get(avro_schema, None)
         if schema_id != None:
             return schema_id
@@ -168,7 +169,7 @@ class CachedSchemaRegistryClient(object):
             # need to parse the schema
             schema_str = result.get("schema")
             try:
-                result = Util.parse_schema_from_string(schema_str)
+                result = util.parse_schema_from_string(schema_str)
                 # cache it
                 self._cache_schema(result, schema_id)
                 return result
@@ -208,7 +209,7 @@ class CachedSchemaRegistryClient(object):
             schema = self.id_to_schema[schema_id]
         else:
             try:
-                schema = Util.parse_schema_from_string(result['schema'])
+                schema = util.parse_schema_from_string(result['schema'])
             except:
                 # bad schema - should not happen
                 log.error("Received bad schema from registry.")
@@ -228,7 +229,7 @@ class CachedSchemaRegistryClient(object):
         @:param: avro_schema: Avro schema
         @:returns: version
         """
-        schemas_to_version = self.subject_to_schema_versions.get(subject, {})
+        schemas_to_version = self.subject_to_schema_versions[subject]
         version = schemas_to_version.get(avro_schema, None)
         if version != None:
             return version
@@ -261,7 +262,7 @@ class CachedSchemaRegistryClient(object):
         """
         url = '/'.join([self.url, 'compatibility', 'subjects', subject,
                         'versions', str(version)])
-        avro_schema = body = {'schema': json.dumps(avro_schema.to_json())}
+        body = {'schema': json.dumps(avro_schema.to_json())}
         try:
             result, code = self._send_request(url, method='POST', body=body)
             if (code == 404):
@@ -322,5 +323,4 @@ class CachedSchemaRegistryClient(object):
 
         return compatbility
 
-    def hash_func(self):
-        return hash(str(self))
+

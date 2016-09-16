@@ -30,8 +30,8 @@ import json
 import re
 from threading import Thread
 
-from tests.MockSchemaRegistryClient import MockSchemaRegistryClient
-from confluent_kafka.avro.serializer import Util
+from tests.mock_schema_registry_client import MockSchemaRegistryClient
+from confluent_kafka.avro.serializer import util
 
 
 class ReqHandler(HTTPSERVER.BaseHTTPRequestHandler):
@@ -117,7 +117,7 @@ class MockServer(HTTPSERVER.HTTPServer, object):
         if not schema:
             return None
         try:
-            avro_schema = Util.parse_schema_from_string(schema)
+            avro_schema = util.parse_schema_from_string(schema)
             return self._get_identity_schema(avro_schema)
         except:
             return None
