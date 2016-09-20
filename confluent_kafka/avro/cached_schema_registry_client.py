@@ -201,7 +201,7 @@ class CachedSchemaRegistryClient(object):
         elif( code == 422 ):
             log.error("Invalid version:" + str(code))
             return (None, None, None)
-        elif (code != 200):
+        elif not (code >= 200 and code <= 299):
             return (None, None, None)
         schema_id = result['id']
         version = result['version']
@@ -241,7 +241,7 @@ class CachedSchemaRegistryClient(object):
         if (code == 404):
             log.error("Not found:"+str(code))
             return None
-        elif (code != 200):
+        elif not (code >= 200 and code <= 299):
             log.error("Unable to get version of a schema:" + str(code))
             return None
         schema_id = result['id']
@@ -271,7 +271,7 @@ class CachedSchemaRegistryClient(object):
             elif (code == 422):
                 log.error(("Invalid subject or schema:" + str(code)))
                 return False
-            elif (code == 200):
+            elif (code >= 200 and code <= 299):
                 return result.get('is_compatible')
             else:
                 log.error("Unable to check the compatibility")
@@ -296,7 +296,7 @@ class CachedSchemaRegistryClient(object):
 
         body = {"compatibility": level}
         result, code = self._send_request(url, method='PUT', body=body)
-        if (code == 200):
+        if (code >= 200 and code <= 299):
             return result['compatibility']
         else:
             log.error("Unable to update level: %s. Error code: %d" % (str(level)), code)
@@ -315,7 +315,7 @@ class CachedSchemaRegistryClient(object):
             url += '/' + subject
 
         result, code = self._send_request(url)
-        if (code == 200):
+        if (code >= 200 and code <= 299):
             compatibility = result.get('compatibility', None)
 
         if not compatibility:

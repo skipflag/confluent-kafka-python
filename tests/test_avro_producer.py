@@ -19,7 +19,7 @@
 #
 # derived from https://github.com/verisign/python-confluent-schemaregistry.git
 #
-
+import os
 import sys
 
 from confluent_kafka.avro.serializer import util
@@ -30,22 +30,17 @@ else:
     import unittest2 as unittest
 from confluent_kafka.avro.avro_producer import AvroProducer
 
-from confluent_kafka.avro.cached_schema_registry_client import CachedSchemaRegistryClient
-from confluent_kafka.avro.serializer.message_serializer import MessageSerializer
-
-
 class TestAvroProducer(unittest.TestCase):
     def setUp(self):
-        self.client = CachedSchemaRegistryClient('http://127.0.0.1:9002')
-        self.ms = MessageSerializer(self.client)
+        pass
 
     def test_instantiation(self):
-        obj = AvroProducer(None, self.ms)
+        obj = AvroProducer(None, 'http://127.0.0.1:9002')
         self.assertTrue(isinstance(obj, AvroProducer))
         self.assertNotEqual(obj, None)
 
     def test_Produce(self):
-        producer = AvroProducer(None, self.ms)
+        producer = AvroProducer(None, 'http://127.0.0.1:9002')
         valueSchema = util.parse_schema_from_file("basic_schema.avsc")
         try:
             producer.produce('test', {"name": 'abc"'}, valueSchema, 'mykey')
@@ -54,5 +49,24 @@ class TestAvroProducer(unittest.TestCase):
             pass
 
 
+    def test_Produce_arguments(self):
+        value_schema = util.parse_schema_from_file("basic_schema.avsc")
+        producer = AvroProducer(None, 'http://127.0.0.1:9002', value_schema= value_schema)
+
+        try:
+            producer.produce('test', {"name": 'abc"'})
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            if exc_type.__name__ == 'SerializerError':
+                self.fail()
+
+    def test_Produce_arguments(self):
+        producer = AvroProducer(None, 'http://127.0.0.1:9002')
+        try:
+            producer.produce('test', {"name": 'abc"'}, 'mykey')
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            if exc_type.__name__ == 'SerializerError':
+                pass
 def suite():
     return unittest.TestLoader().loadTestsFromTestCase(TestAvroProducer)

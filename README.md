@@ -62,11 +62,9 @@ key = {"name": "Key"}
 producer = Producer({'bootstrap.servers': 'mybroker,mybroker2'})
 
 schema_registry_url = 'https://<host>:<port>'
-schema_registr_client = CachedSchemaRegistryClient(url=schema_registry_url)
-serializer = MessageSerializer(schema_registr_client)
 
-avroProducer = AvroProducer(producer, serializer)
-avroProducer.produce('my_topic', value, value_schema=value_avro_schema, key=key, key_schema=key_avro_schema)
+avroProducer = AvroProducer(producer, schema_registry_url, value_schema=value_avro_schema, key_schema=key_avro_schema)
+avroProducer.produce('my_topic', value, key)
 ```
 
 See [examples](examples) for more examples.

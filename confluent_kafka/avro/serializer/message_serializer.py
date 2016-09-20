@@ -101,34 +101,6 @@ class MessageSerializer(object):
 
         return self.encode_record_with_schema_id(schema_id, record)
 
-    # subject = topic + suffix
-    def encode_record_for_topic(self, topic, record, is_key=False):
-        """
-        Encode a record for a given topic.
-
-        This is expensive as it fetches the latest schema for a given topic.
-        @:param topic  :  Topic name
-        @:param record : A dictionary object
-        @:param is_key : Boolean value: True if record is key
-        @:returns : Encoded record with schema ID as bytes
-        """
-        if not isinstance(record, dict):
-            log.error("record must be a dictionary")
-            raise SerializerError("record must be a dictionary")
-        subject_suffix = ('-key' if is_key else '-value')
-        # get the latest schema for the subject
-        subject = topic + subject_suffix
-        try:
-            schema_id, schema, version = self.registry_client.get_latest_schema(subject)
-        except ClientError as e:
-            message = "Unable to retrieve schema id for subject %s" % (subject)
-            log.error(message)
-            raise SerializerError(message)
-        else:
-            # cache writer
-            self.id_to_writers[schema_id] = avro.io.DatumWriter(schema)
-            return self.encode_record_with_schema_id(schema_id, record)
-
     def encode_record_with_schema_id(self, schema_id, record):
         """
         Encode a record with a given schema id.  The record must
