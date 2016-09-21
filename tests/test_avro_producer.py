@@ -43,7 +43,7 @@ class TestAvroProducer(unittest.TestCase):
         producer = AvroProducer(None, 'http://127.0.0.1:9002')
         valueSchema = util.parse_schema_from_file("basic_schema.avsc")
         try:
-            producer.produce('test', {"name": 'abc"'}, valueSchema, 'mykey')
+            producer.produce(topic='test', value={"name": 'abc"'}, value_schema=valueSchema, key='mykey')
             self.fail("Should expect value_schema")
         except Exception as e:
             pass
@@ -54,7 +54,7 @@ class TestAvroProducer(unittest.TestCase):
         producer = AvroProducer(None, 'http://127.0.0.1:9002', value_schema= value_schema)
 
         try:
-            producer.produce('test', {"name": 'abc"'})
+            producer.produce(topic='test', value={"name": 'abc"'})
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             if exc_type.__name__ == 'SerializerError':
@@ -63,7 +63,7 @@ class TestAvroProducer(unittest.TestCase):
     def test_Produce_arguments(self):
         producer = AvroProducer(None, 'http://127.0.0.1:9002')
         try:
-            producer.produce('test', {"name": 'abc"'}, 'mykey')
+            producer.produce(topic='test',value= {"name": 'abc"'},key= 'mykey')
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             if exc_type.__name__ == 'SerializerError':
