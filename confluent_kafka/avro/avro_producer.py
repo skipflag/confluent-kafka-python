@@ -17,6 +17,7 @@
 
 import logging
 
+from confluent_kafka.avro import ClientError
 from confluent_kafka.avro.cached_schema_registry_client import CachedSchemaRegistryClient
 from confluent_kafka.avro.serializer import SerializerError
 from confluent_kafka.avro.serializer.message_serializer import MessageSerializer
@@ -39,7 +40,7 @@ class AvroProducer(object):
         self.key_schema = key_schema
         self.value_schema = value_schema
 
-    def produce(self, topic, value=None, key=None, *args, **kwargs):
+    def produce(self, **kwargs):
         '''
             Sends message to kafka by encoding with specified avro schema
             @:param: topic: topic name
@@ -52,6 +53,12 @@ class AvroProducer(object):
         # get schemas from  kwargs if defined
         key_schema = kwargs.pop('key_schema', None)
         value_schema = kwargs.pop('value_schema', None)
+        topic= kwargs.pop('topic', None)
+        if topic is None:
+            log.error("Topic name not specified.")
+            raise ClientError("Topic name not specified.")
+        value= kwargs.pop('value', None)
+        key= kwargs.pop('key', None)
 
         # if key_schema is not initialized, fall back on default key_schema passed as construction param.
         if key_schema is None:
@@ -75,7 +82,7 @@ class AvroProducer(object):
                 log.error("Schema required for key serialization")
                 raise SerializerError("Avro schema required for key")
 
-        self._producer.produce(topic, value, key, *args, **kwargs)
+        self._producer.produce(topic, value, key, **kwargs)
 
     def poll(self, timeout):
         self._producer.poll(timeout)

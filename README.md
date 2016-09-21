@@ -64,7 +64,7 @@ producer = Producer({'bootstrap.servers': 'mybroker,mybroker2'})
 schema_registry_url = 'https://<host>:<port>'
 
 avroProducer = AvroProducer(producer, schema_registry_url, value_schema=value_avro_schema, key_schema=key_avro_schema)
-avroProducer.produce('my_topic', value, key)
+avroProducer.produce(topic='my_topic', value=value, key=key)
 ```
 
 See [examples](examples) for more examples.
