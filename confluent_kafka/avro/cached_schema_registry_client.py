@@ -29,14 +29,18 @@ from avro import schema
 from confluent_kafka.avro.serializer import util
 from . import ClientError, VALID_LEVELS
 
+
 # below classes were not hashable. hence defining them explicitely as a quick fix
 def hash_func(self):
     return hash(str(self))
+
+
 schema.RecordSchema.__hash__ = hash_func
 schema.PrimitiveSchema.__hash__ = hash_func
 # Common accept header sent
 ACCEPT_HDR = "application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json"
 log = logging.getLogger(__name__)
+
 
 class CachedSchemaRegistryClient(object):
     """
@@ -62,8 +66,6 @@ class CachedSchemaRegistryClient(object):
         # subj => { schema => version }
         self.subject_to_schema_versions = defaultdict(dict)
 
-
-
     def _send_request(self, url, method='GET', body=None, headers=None):
         if body:
             body = json.dumps(body)
@@ -77,7 +79,7 @@ class CachedSchemaRegistryClient(object):
         if headers:
             for header_name in headers:
                 _headers[header_name] = headers[header_name]
-        if (method == 'GET'):
+        if method == 'GET':
             response = requests.get(url, headers=_headers)
         elif method == 'POST':
             response = requests.post(url, body, headers=_headers)
@@ -131,13 +133,13 @@ class CachedSchemaRegistryClient(object):
 
         body = {'schema': json.dumps(avro_schema.to_json())}
         result, code = self._send_request(url, method='POST', body=body)
-        if(code==409):
+        if code == 409:
             log.error("Incompatible Avro schema:" + str(code))
             raise ClientError("Incompatible Avro schema:" + str(code))
-        elif(code==422):
+        elif code == 422:
             log.error("Invalid Avro schema:" + str(code))
             raise ClientError("Invalid Avro schema:" + str(code))
-        elif (code != 200):
+        elif code != 200:
             log.error("Unable to register schema. Error code:" + str(code))
             raise ClientError("Unable to register schema. Error code:" + str(code))
         # result is a dict
@@ -159,10 +161,10 @@ class CachedSchemaRegistryClient(object):
         url = '/'.join([self.url, 'schemas', 'ids', str(schema_id)])
 
         result, code = self._send_request(url)
-        if(code==404):
-            log.error("Schema not found:"+str(code))
+        if code == 404:
+            log.error("Schema not found:" + str(code))
             return None
-        elif (code != 200):
+        elif code != 200:
             log.error("Unable to get schema for the specific ID:" + str(code))
             return None
         else:
@@ -195,10 +197,10 @@ class CachedSchemaRegistryClient(object):
         url = '/'.join([self.url, 'subjects', subject, 'versions', 'latest'])
 
         result, code = self._send_request(url)
-        if ( code == 404):
-            log.error("Schema not found:"+str(code))
+        if code == 404:
+            log.error("Schema not found:" + str(code))
             return (None, None, None)
-        elif( code == 422 ):
+        elif code == 422:
             log.error("Invalid version:" + str(code))
             return (None, None, None)
         elif not (code >= 200 and code <= 299):
@@ -238,8 +240,8 @@ class CachedSchemaRegistryClient(object):
         body = {'schema': json.dumps(avro_schema.to_json())}
 
         result, code = self._send_request(url, method='POST', body=body)
-        if (code == 404):
-            log.error("Not found:"+str(code))
+        if code == 404:
+            log.error("Not found:" + str(code))
             return None
         elif not (code >= 200 and code <= 299):
             log.error("Unable to get version of a schema:" + str(code))
@@ -265,13 +267,13 @@ class CachedSchemaRegistryClient(object):
         body = {'schema': json.dumps(avro_schema.to_json())}
         try:
             result, code = self._send_request(url, method='POST', body=body)
-            if (code == 404):
-                log.error(("Subject or version not found:"+str(code)))
+            if code == 404:
+                log.error(("Subject or version not found:" + str(code)))
                 return False
-            elif (code == 422):
+            elif code == 422:
                 log.error(("Invalid subject or schema:" + str(code)))
                 return False
-            elif (code >= 200 and code <= 299):
+            elif code >= 200 and code <= 299:
                 return result.get('is_compatible')
             else:
                 log.error("Unable to check the compatibility")
@@ -296,7 +298,7 @@ class CachedSchemaRegistryClient(object):
 
         body = {"compatibility": level}
         result, code = self._send_request(url, method='PUT', body=body)
-        if (code >= 200 and code <= 299):
+        if code >= 200 and code <= 299:
             return result['compatibility']
         else:
             log.error("Unable to update level: %s. Error code: %d" % (str(level)), code)
@@ -315,12 +317,10 @@ class CachedSchemaRegistryClient(object):
             url += '/' + subject
 
         result, code = self._send_request(url)
-        if (code >= 200 and code <= 299):
+        if code >= 200 and code <= 299:
             compatibility = result.get('compatibility', None)
 
         if not compatibility:
             compatbility = result.get('compatibilityLevel')
 
         return compatbility
-
-

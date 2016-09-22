@@ -24,11 +24,13 @@ import logging
 import struct
 import sys
 import traceback
+
 import avro
 import avro.io
 
 from confluent_kafka.avro import ClientError
 from . import SerializerError
+
 log = logging.getLogger(__name__)
 
 MAGIC_BYTE = 0
@@ -53,6 +55,7 @@ class ContextStringIO(io.BytesIO):
     def __exit__(self, *args):
         self.close()
         return False
+
 
 class MessageSerializer(object):
     """
@@ -124,9 +127,10 @@ class MessageSerializer(object):
                 self.id_to_writers[schema_id] = avro.io.DatumWriter(schema)
             except ClientError as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                log.error("Error fetching schema from registry:"+repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-                raise SerializerError("Error fetching schema from registry:"+repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-
+                log.error("Error fetching schema from registry:" + repr(
+                    traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                raise SerializerError("Error fetching schema from registry:" + repr(
+                    traceback.format_exception(exc_type, exc_value, exc_traceback)))
 
         # get the writer
         writer = self.id_to_writers[schema_id]
