@@ -36,12 +36,12 @@ class AvroProducer(object):
         @:param: message_serializer: Message Serializer object
     '''
 
-    def __init__(self, producer, schema_registry_url, key_schema=None,
-                 value_schema=None):  # real signature unknown; restored from __doc__
+    def __init__(self, producer, schema_registry_url, default_key_schema=None,
+                 default_value_schema=None):  # real signature unknown; restored from __doc__
         self._producer = producer
         self._serializer = MessageSerializer(CachedSchemaRegistryClient(url=schema_registry_url))
-        self.key_schema = key_schema
-        self.value_schema = value_schema
+        self.key_schema = default_key_schema
+        self.value_schema = default_value_schema
 
     def produce(self, **kwargs):
         '''

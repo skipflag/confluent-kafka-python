@@ -54,8 +54,8 @@ from confluent_kafka.avro.cached_schema_registry_client import CachedSchemaRegis
 from confluent_kafka.avro.serializer import util
 from confluent_kafka.avro.serializer.message_serializer import MessageSerializer
 
-default_value_schema = util.parse_schema_from_file('ValueSchema.avsc')
-default_key_schema = util.parse_schema_from_file('KeySchema.avsc')
+value_schema = util.parse_schema_from_file('ValueSchema.avsc')
+key_schema = util.parse_schema_from_file('KeySchema.avsc')
 value = {"name": "Value"}
 key = {"name": "Key"}
 
@@ -63,7 +63,7 @@ producer = Producer({'bootstrap.servers': 'mybroker,mybroker2'})
 
 schema_registry_url = 'https://<host>:<port>'
 
-avroProducer = AvroProducer(producer, schema_registry_url, value_schema=default_value_schema, key_schema=default_key_schema)
+avroProducer = AvroProducer(producer, schema_registry_url, default_key_schema=key_schema, default_value_schema=value_schema)
 avroProducer.produce(topic='my_topic', value=value, key=key)
 ```
 

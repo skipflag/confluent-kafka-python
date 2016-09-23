@@ -50,7 +50,7 @@ class TestAvroProducer(unittest.TestCase):
 
     def test_Produce_arguments(self):
         value_schema = util.parse_schema_from_file("basic_schema.avsc")
-        producer = AvroProducer(None, 'http://127.0.0.1:9002', value_schema=value_schema)
+        producer = AvroProducer(None, 'http://127.0.0.1:9002', default_value_schema=value_schema)
 
         try:
             producer.produce(topic='test', value={"name": 'abc"'})
