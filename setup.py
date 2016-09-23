@@ -18,4 +18,7 @@ setup(name='confluent-kafka',
       url='https://github.com/confluentinc/confluent-kafka-python',
       ext_modules=[module],
       packages=find_packages(),
-      data_files = [('', ['LICENSE'])])
+      data_files = [('', ['LICENSE'])],
+      extras_require={
+          'avro': ['fastavro', 'avro']
+      })
